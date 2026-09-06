@@ -7,13 +7,19 @@ Aplicacion independiente dentro de este monorepo (ver
 arquitectura completa). No depende de `server/`; para el MVP usa el paquete
 `insightface` ya vendido en `python-package/` de este mismo repositorio.
 
-## Estado actual: Fase 1
+## Estado actual: Fase 2
 
-Conectarse a una camara (RTSP, USB o fichero de video), decodificar los
-frames y mostrarlos en vivo en una pagina web, sin analisis de IA todavia.
-Las fases posteriores (deteccion facial, reconocimiento, eventos,
-persistencia, multicamara, ONVIF, etc.) se describen en la seccion 11 de
-`ARCHITECTURE.md`.
+- Fase 1: conectarse a una camara (RTSP, USB o fichero de video),
+  decodificar los frames y mostrarlos en vivo en una pagina web.
+- Fase 2: deteccion facial (SCRFD via `insightface`) integrada en el
+  Frame Processing Pipeline, con bounding boxes dibujados en vivo sobre el
+  video. Sin reconocimiento todavia (llega en la Fase 3/4).
+
+Por defecto el motor de vision es `mock` (no requiere modelos ni red) para
+que la plataforma arranque sin dependencias pesadas; ver "Activar
+deteccion facial real" mas abajo. Las fases posteriores (reconocimiento,
+eventos, persistencia, multicamara, ONVIF, etc.) se describen en la
+seccion 11 de `ARCHITECTURE.md`.
 
 ## Instalacion (desarrollo)
 
@@ -23,6 +29,17 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 ```
+
+### Activar deteccion facial real
+
+```bash
+pip install -e ".[vision]"
+```
+
+Y en `config/settings.toml` cambia `[vision] engine = "insightface"`. La
+primera vez que arranque descargara el paquete de modelos (`buffalo_l` por
+defecto) si hay conexion a internet; si no, colocalo manualmente en
+`~/.insightface/models/`.
 
 ## Configuracion
 

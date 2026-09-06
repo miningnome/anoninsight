@@ -11,7 +11,9 @@ from fastapi.staticfiles import StaticFiles
 
 from vip.cameras.factory import create_camera_source
 from vip.core.config import Settings
-from vip.pipeline import CameraWorker
+from vip.pipeline import CameraWorker, FrameProcessor
+from vip.vision import SerializedVisionEngine
+from vip.vision.face import create_face_engine
 
 from .registry import CameraRegistry
 from .routes.cameras import router as cameras_router
@@ -27,6 +29,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        # One face engine, shared and serialized across every camera, so
+        # VRAM/RAM usage does not grow with the number of cameras.
+        face_engine = SerializedVisionEngine(create_face_engine(settings.vision))
+
         for camera_config in settings.cameras:
             source = create_camera_source(camera_config)
             worker = CameraWorker(
@@ -34,8 +40,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 reconnect_delay_seconds=camera_config.reconnect_delay_seconds,
                 reconnect_max_delay_seconds=camera_config.reconnect_max_delay_seconds,
             )
-            registry.add(camera_config, worker)
+            processor = FrameProcessor(
+                worker, [face_engine], analysis_fps=camera_config.analysis_fps
+            )
+            registry.add(camera_config, worker, processor)
             worker.start()
+            processor.start()
         yield
         registry.stop_all()
 

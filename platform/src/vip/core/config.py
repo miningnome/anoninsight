@@ -27,7 +27,25 @@ class CameraConfig(BaseModel):
     reconnect_delay_seconds: float = 1.0
     reconnect_max_delay_seconds: float = 30.0
     display_fps: float = 15.0
+    analysis_fps: float = 5.0
     loop: bool = True  # only relevant for source_type == "file"
+
+
+class VisionConfig(BaseModel):
+    """Shared vision engine configuration.
+
+    One engine instance is loaded and shared across every camera (see
+    vip.vision.concurrency.SerializedVisionEngine) rather than one per
+    camera, so memory/VRAM usage does not grow linearly with the number of
+    cameras. Default is "mock" so the platform starts cleanly without any
+    model weights or network access; switch to "insightface" once a model
+    pack is available locally.
+    """
+
+    engine: Literal["insightface", "mock"] = "mock"
+    model_pack: str = "buffalo_l"
+    ctx_id: int = -1  # -1 = CPU, >=0 = CUDA device index
+    min_score: float = 0.5
 
 
 class ServerConfig(BaseModel):
@@ -37,6 +55,7 @@ class ServerConfig(BaseModel):
 
 class Settings(BaseModel):
     server: ServerConfig = Field(default_factory=ServerConfig)
+    vision: VisionConfig = Field(default_factory=VisionConfig)
     cameras: list[CameraConfig] = Field(default_factory=list)
 
     @classmethod

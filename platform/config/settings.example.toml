@@ -1,12 +1,19 @@
 # Copia este fichero a settings.toml (o exporta VIP_* como variables de
 # entorno) para configurar la Video Intelligence Platform en desarrollo.
-#
-# Fase 1: solo hace falta la seccion [[cameras]]. El resto de secciones
-# se activaran en fases posteriores (deteccion facial, GPU, etc.).
 
 [server]
 host = "0.0.0.0"
 port = 8088
+
+# Fase 2: deteccion facial. "mock" (por defecto) no requiere modelos ni red
+# y sirve para desarrollar/probar el resto de la plataforma; cambia a
+# "insightface" cuando tengas el paquete de modelos descargado localmente
+# (se descarga automaticamente la primera vez que se usa, si hay red).
+[vision]
+engine = "mock"                # "insightface" | "mock"
+model_pack = "buffalo_l"
+ctx_id = -1                    # -1 = CPU, >=0 = indice de GPU CUDA
+min_score = 0.5
 
 [[cameras]]
 id = "camera-01"
@@ -17,6 +24,7 @@ open_timeout_seconds = 5.0
 read_timeout_seconds = 5.0
 reconnect_delay_seconds = 1.0
 display_fps = 15.0
+analysis_fps = 5.0
 
 # Ejemplo de camara de pruebas sin hardware real (Fase 1):
 # [[cameras]]
