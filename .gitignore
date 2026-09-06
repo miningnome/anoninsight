@@ -112,3 +112,7 @@ server/test-results/
 *.onnx
 
 .DS_Store
+
+# Video Intelligence Platform runtime data (SQLite DB, face crops)
+platform/data/
+platform/config/settings.toml

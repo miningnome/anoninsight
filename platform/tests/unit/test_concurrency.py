@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 import numpy as np
 
 from vip.cameras.base import Frame
-from vip.vision.base import VisionEngine
+from vip.vision.base import ModelInfo, VisionEngine
 from vip.vision.concurrency import SerializedVisionEngine
 
 
@@ -20,6 +20,10 @@ class _SlowEngine(VisionEngine):
         self._active = 0
         self._max_active = 0
         self._lock = threading.Lock()
+
+    @property
+    def model_info(self) -> ModelInfo:
+        return ModelInfo(model_id="slow", model_version="1")
 
     def warmup(self) -> None:
         self.warmup_calls += 1

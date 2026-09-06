@@ -48,6 +48,12 @@ class VisionConfig(BaseModel):
     min_score: float = 0.5
 
 
+class StorageConfig(BaseModel):
+    database_path: str = "data/vip.db"
+    store_face_crops: bool = True
+    max_upload_bytes: int = 10 * 1024 * 1024
+
+
 class ServerConfig(BaseModel):
     host: str = "0.0.0.0"
     port: int = 8088
@@ -56,6 +62,7 @@ class ServerConfig(BaseModel):
 class Settings(BaseModel):
     server: ServerConfig = Field(default_factory=ServerConfig)
     vision: VisionConfig = Field(default_factory=VisionConfig)
+    storage: StorageConfig = Field(default_factory=StorageConfig)
     cameras: list[CameraConfig] = Field(default_factory=list)
 
     @classmethod

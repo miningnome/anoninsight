@@ -441,7 +441,15 @@ necesite):
 
 - `fastapi`, `uvicorn[standard]` - API.
 - `pydantic` v2 - schemas/config.
-- `sqlalchemy` - acceso a SQLite (y Postgres el dia que se migre).
+- Acceso a SQLite: **`sqlite3` de la libreria estandar**, no SQLAlchemy.
+  Correccion respecto al plan inicial de este documento, aplicada al
+  implementar la Fase 3: como todo el SQL vive detras de `Repository`
+  (misma frontera de portabilidad que daria un ORM) y las migraciones son
+  SQL numerado plano, SQLAlchemy solo habria actuado como envoltorio de
+  conexion. Se evita asi una dependencia que hoy no aporta, coherente con
+  "no introducir dependencias innecesarias" y con el patron ya probado en
+  `server/`. Se reevaluara cuando llegue PostgreSQL (Fase 12), momento en
+  el que el cambio queda confinado a `vip/storage/`.
 - `opencv-python-headless` - decodificacion/lectura RTSP y overlays.
 - `insightface` (dependencia local a `python-package/` de este mismo repo)
   - trae `onnxruntime` (CPU) como dependencia transitiva.

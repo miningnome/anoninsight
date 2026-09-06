@@ -20,7 +20,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from vip.api.app import create_app
-from vip.core.config import CameraConfig, Settings, VisionConfig
+from vip.core.config import CameraConfig, Settings, StorageConfig, VisionConfig
 
 
 @pytest.fixture
@@ -43,9 +43,10 @@ def _wait_until(predicate, timeout: float = 5.0) -> bool:
     return False
 
 
-def test_file_camera_streams_through_the_full_app(sample_video):
+def test_file_camera_streams_through_the_full_app(sample_video, tmp_path):
     settings = Settings(
         vision=VisionConfig(engine="mock"),
+        storage=StorageConfig(database_path=str(tmp_path / "vip.db")),
         cameras=[
             CameraConfig(
                 id="camera-test",

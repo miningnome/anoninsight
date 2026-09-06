@@ -7,7 +7,9 @@ import numpy as np
 
 from vip.cameras.base import Frame
 from vip.pipeline.processor import FrameProcessor
-from vip.vision.base import BoundingBox, Detection, VisionEngine
+from vip.vision.base import BoundingBox, Detection, ModelInfo, VisionEngine
+
+_TEST_MODEL = ModelInfo(model_id="test", model_version="1")
 
 
 class _FakeWorker:
@@ -33,6 +35,10 @@ class _RecordingEngine(VisionEngine):
         self.closed = False
         self._detections_by_sequence = detections_by_sequence or {}
 
+    @property
+    def model_info(self) -> ModelInfo:
+        return _TEST_MODEL
+
     def warmup(self) -> None:
         pass
 
@@ -46,6 +52,10 @@ class _RecordingEngine(VisionEngine):
 
 class _FailingEngine(VisionEngine):
     name = "failing"
+
+    @property
+    def model_info(self) -> ModelInfo:
+        return _TEST_MODEL
 
     def warmup(self) -> None:
         pass

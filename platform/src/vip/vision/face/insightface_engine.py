@@ -10,7 +10,7 @@ must not require the package - or its model weights - to be installed.
 from __future__ import annotations
 
 from vip.cameras.base import Frame
-from vip.vision.base import BoundingBox, Detection
+from vip.vision.base import BoundingBox, Detection, ModelInfo
 
 from .base import FaceEngine
 
@@ -29,15 +29,25 @@ class InsightFaceEngine(FaceEngine):
         self._detection_size = detection_size
         self._min_score = min_score
         self._app = None
+        self._model_version: str | None = None
+
+    @property
+    def model_info(self) -> ModelInfo:
+        return ModelInfo(
+            model_id=f"insightface:{self._model_pack}",
+            model_version=self._model_version or "unknown",
+        )
 
     def warmup(self) -> None:
         if self._app is not None:
             return
+        import insightface
         from insightface.app import FaceAnalysis
 
         app = FaceAnalysis(name=self._model_pack)
         app.prepare(ctx_id=self._ctx_id, det_size=self._detection_size)
         self._app = app
+        self._model_version = getattr(insightface, "__version__", "unknown")
 
     def process(self, frame: Frame) -> list[Detection]:
         if self._app is None:

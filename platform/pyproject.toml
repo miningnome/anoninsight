@@ -41,5 +41,9 @@ dev = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+"vip.storage" = ["migrations/*.sql"]
+"vip" = ["web/*"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

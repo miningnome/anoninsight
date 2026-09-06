@@ -15,6 +15,13 @@ model_pack = "buffalo_l"
 ctx_id = -1                    # -1 = CPU, >=0 = indice de GPU CUDA
 min_score = 0.5
 
+# Fase 3: persistencia local (SQLite). El fichero y su esquema se crean
+# solos al arrancar. Todo el procesamiento y almacenamiento es local.
+[storage]
+database_path = "data/vip.db"
+store_face_crops = true        # guardar el recorte del rostro registrado
+max_upload_bytes = 10485760    # 10 MB por fotografia
+
 [[cameras]]
 id = "camera-01"
 name = "Reception"

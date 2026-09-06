@@ -7,13 +7,16 @@ Aplicacion independiente dentro de este monorepo (ver
 arquitectura completa). No depende de `server/`; para el MVP usa el paquete
 `insightface` ya vendido en `python-package/` de este mismo repositorio.
 
-## Estado actual: Fase 2
+## Estado actual: Fase 3
 
 - Fase 1: conectarse a una camara (RTSP, USB o fichero de video),
   decodificar los frames y mostrarlos en vivo en una pagina web.
 - Fase 2: deteccion facial (SCRFD via `insightface`) integrada en el
   Frame Processing Pipeline, con bounding boxes dibujados en vivo sobre el
-  video. Sin reconocimiento todavia (llega en la Fase 3/4).
+  video.
+- Fase 3: registro de personas a partir de fotografias aportadas
+  voluntariamente, con calculo y persistencia del embedding facial en
+  SQLite. Sin reconocimiento contra el video todavia (llega en la Fase 4).
 
 Por defecto el motor de vision es `mock` (no requiere modelos ni red) para
 que la plataforma arranque sin dependencias pesadas; ver "Activar
@@ -56,8 +59,12 @@ configuracion en otra ruta (por defecto `config/settings.toml`).
 uvicorn vip.api.app:app --host 0.0.0.0 --port 8088 --app-dir src
 ```
 
-Abre `http://localhost:8088/` para ver el listado de camaras configuradas y
-el video en vivo de cada una (`/api/cameras/{id}/stream.mjpg`).
+Abre `http://localhost:8088/`: la pestana "Camaras" muestra el video en
+vivo de cada camara configurada (`/api/cameras/{id}/stream.mjpg`) y la
+pestana "Personas" permite registrar personas subiendo sus fotografias.
+
+La base de datos SQLite se crea sola en `storage.database_path`
+(`data/vip.db` por defecto) aplicando las migraciones al arrancar.
 
 ## Tests
 

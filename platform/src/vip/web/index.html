@@ -6,23 +6,90 @@
 <style>
   body { font-family: system-ui, sans-serif; background:#111; color:#eee; margin:0; padding:1.5rem; }
   h1 { font-size:1.1rem; font-weight:600; letter-spacing:.02em; margin:0 0 1rem; }
+  nav { display:flex; gap:.5rem; margin-bottom:1.2rem; }
+  nav button { background:#1b1b1b; color:#bbb; border:1px solid #2a2a2a; border-radius:6px;
+               padding:.4rem .9rem; font-size:.85rem; cursor:pointer; }
+  nav button.active { background:#22331f; color:#8fe0a5; border-color:#2f5136; }
   .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(360px,1fr)); gap:1rem; }
-  .camera { background:#1b1b1b; border:1px solid #2a2a2a; border-radius:8px; overflow:hidden; }
+  .camera, .person { background:#1b1b1b; border:1px solid #2a2a2a; border-radius:8px; overflow:hidden; }
   .camera img { width:100%; display:block; background:#000; aspect-ratio:16/9; object-fit:contain; }
-  .camera .meta { padding:.6rem .8rem; display:flex; justify-content:space-between; align-items:center; font-size:.85rem; }
+  .camera .meta, .person .meta { padding:.6rem .8rem; display:flex; justify-content:space-between;
+                                 align-items:center; font-size:.85rem; }
   .status { padding:.1rem .5rem; border-radius:999px; font-size:.75rem; }
   .status.running { background:#12351f; color:#5fd88f; }
   .status.reconnecting { background:#3a2c12; color:#e8b054; }
   .status.starting, .status.stopped { background:#2a2a2a; color:#999; }
-  #empty { color:#888; }
+  .muted { color:#888; }
+  form { background:#1b1b1b; border:1px solid #2a2a2a; border-radius:8px; padding:1rem;
+         margin-bottom:1.2rem; display:flex; flex-wrap:wrap; gap:.7rem; align-items:flex-end; }
+  label { display:flex; flex-direction:column; gap:.3rem; font-size:.8rem; color:#aaa; }
+  input { background:#111; border:1px solid #333; border-radius:5px; color:#eee;
+          padding:.4rem .5rem; font-size:.85rem; }
+  button.primary { background:#22331f; color:#8fe0a5; border:1px solid #2f5136; border-radius:6px;
+                   padding:.45rem 1rem; font-size:.85rem; cursor:pointer; }
+  button.danger { background:transparent; color:#c96a6a; border:1px solid #452626; border-radius:5px;
+                  padding:.2rem .55rem; font-size:.75rem; cursor:pointer; }
+  .faces { display:flex; gap:.4rem; padding:0 .8rem .8rem; flex-wrap:wrap; }
+  .faces img { width:56px; height:56px; object-fit:cover; border-radius:5px; border:1px solid #2a2a2a; }
+  #feedback { font-size:.8rem; margin-bottom:1rem; }
+  #feedback .error { color:#e08b8b; }
+  #feedback .ok { color:#8fe0a5; }
 </style>
 </head>
 <body>
-<h1>Video Intelligence Platform - camaras en vivo</h1>
-<div id="grid" class="grid"></div>
-<p id="empty" hidden>No hay camaras configuradas. Edita config/settings.toml.</p>
+<h1>Video Intelligence Platform</h1>
+
+<nav>
+  <button data-view="cameras" class="active">Camaras</button>
+  <button data-view="persons">Personas</button>
+</nav>
+
+<section id="view-cameras">
+  <div id="camera-grid" class="grid"></div>
+  <p id="cameras-empty" class="muted" hidden>No hay camaras configuradas. Edita config/settings.toml.</p>
+</section>
+
+<section id="view-persons" hidden>
+  <form id="person-form">
+    <label>Nombre
+      <input type="text" name="name" required placeholder="Carlos Garcia">
+    </label>
+    <label>Identificador externo (opcional)
+      <input type="text" name="external_id" placeholder="EMP-0421">
+    </label>
+    <label>Fotografias
+      <input type="file" name="images" accept="image/*" multiple>
+    </label>
+    <button type="submit" class="primary">Registrar persona</button>
+  </form>
+  <div id="feedback"></div>
+  <div id="person-grid" class="grid"></div>
+  <p id="persons-empty" class="muted" hidden>Todavia no hay personas registradas.</p>
+</section>
+
 <script>
-let knownIds = new Set();
+const REJECTION_LABELS = {
+  invalid_image: "imagen no valida",
+  face_not_found: "no se detecto ningun rostro",
+  multiple_faces: "hay mas de un rostro en la foto",
+  low_detection_score: "deteccion poco fiable",
+  missing_embedding: "el motor no genero embedding",
+};
+
+let knownCameraIds = new Set();
+
+function showView(view) {
+  document.getElementById("view-cameras").hidden = view !== "cameras";
+  document.getElementById("view-persons").hidden = view !== "persons";
+  for (const button of document.querySelectorAll("nav button")) {
+    button.classList.toggle("active", button.dataset.view === view);
+  }
+  if (view === "persons") refreshPersons();
+}
+
+for (const button of document.querySelectorAll("nav button")) {
+  button.addEventListener("click", () => showView(button.dataset.view));
+}
 
 function cameraCard(camera) {
   const el = document.createElement("div");
@@ -37,30 +104,27 @@ function cameraCard(camera) {
   return el;
 }
 
-async function refresh() {
-  const res = await fetch("/api/cameras");
-  const cameras = await res.json();
-  const grid = document.getElementById("grid");
-  const empty = document.getElementById("empty");
+async function refreshCameras() {
+  const cameras = await (await fetch("/api/cameras")).json();
+  const grid = document.getElementById("camera-grid");
+  const empty = document.getElementById("cameras-empty");
 
   if (cameras.length === 0) {
     grid.innerHTML = "";
     empty.hidden = false;
-    knownIds = new Set();
+    knownCameraIds = new Set();
     return;
   }
   empty.hidden = true;
 
   const currentIds = new Set(cameras.map((c) => c.id));
   const sameIds =
-    currentIds.size === knownIds.size && [...currentIds].every((id) => knownIds.has(id));
+    currentIds.size === knownCameraIds.size && [...currentIds].every((id) => knownCameraIds.has(id));
 
   if (!sameIds) {
     grid.innerHTML = "";
-    for (const camera of cameras) {
-      grid.appendChild(cameraCard(camera));
-    }
-    knownIds = currentIds;
+    for (const camera of cameras) grid.appendChild(cameraCard(camera));
+    knownCameraIds = currentIds;
     return;
   }
 
@@ -75,8 +139,71 @@ async function refresh() {
   }
 }
 
-refresh();
-setInterval(refresh, 5000);
+async function refreshPersons() {
+  const persons = await (await fetch("/api/persons")).json();
+  const grid = document.getElementById("person-grid");
+  const empty = document.getElementById("persons-empty");
+  grid.innerHTML = "";
+  empty.hidden = persons.length > 0;
+
+  for (const person of persons) {
+    const faces = await (await fetch(`/api/persons/${person.id}/faces`)).json();
+    const el = document.createElement("div");
+    el.className = "person";
+    el.innerHTML = `
+      <div class="meta">
+        <span>${person.name}${person.external_id ? ` <span class="muted">(${person.external_id})</span>` : ""}</span>
+        <span><span class="muted">${person.faces} rostro(s)</span>
+          <button class="danger" data-delete="${person.id}">Borrar</button></span>
+      </div>
+      <div class="faces">
+        ${faces
+          .map(
+            (face) =>
+              `<img src="/api/persons/${person.id}/faces/${face.id}/image" alt="rostro registrado" title="score ${face.detection_score.toFixed(2)}">`
+          )
+          .join("")}
+      </div>`;
+    grid.appendChild(el);
+  }
+
+  for (const button of grid.querySelectorAll("[data-delete]")) {
+    button.addEventListener("click", async () => {
+      await fetch(`/api/persons/${button.dataset.delete}`, { method: "DELETE" });
+      refreshPersons();
+    });
+  }
+}
+
+document.getElementById("person-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = event.target;
+  const feedback = document.getElementById("feedback");
+  feedback.innerHTML = "";
+
+  const response = await fetch("/api/persons", { method: "POST", body: new FormData(form) });
+  if (!response.ok) {
+    const detail = await response.json().catch(() => ({}));
+    feedback.innerHTML = `<span class="error">No se pudo registrar: ${detail.detail || response.status}</span>`;
+    return;
+  }
+
+  const person = await response.json();
+  const enrolled = person.enrollment.enrolled.length;
+  const rejected = person.enrollment.rejected;
+  const messages = [`<span class="ok">${person.name} registrado con ${enrolled} rostro(s).</span>`];
+  for (const rejection of rejected) {
+    messages.push(
+      `<span class="error">${rejection.filename}: ${REJECTION_LABELS[rejection.reason] || rejection.reason}</span>`
+    );
+  }
+  feedback.innerHTML = messages.join("<br>");
+  form.reset();
+  refreshPersons();
+});
+
+refreshCameras();
+setInterval(refreshCameras, 5000);
 </script>
 </body>
 </html>

@@ -18,6 +18,19 @@ from vip.cameras.base import Frame
 
 
 @dataclass(frozen=True)
+class ModelInfo:
+    """Identifies the model that produced a detection or embedding.
+
+    Embeddings are only comparable against others from the same model, so
+    this travels with every stored embedding (see ARCHITECTURE.md, problem
+    7) and lets the platform refuse invalid cross-model comparisons.
+    """
+
+    model_id: str
+    model_version: str
+
+
+@dataclass(frozen=True)
 class BoundingBox:
     x1: float
     y1: float
@@ -37,6 +50,10 @@ class Detection:
 
 class VisionEngine(ABC):
     name: str
+
+    @property
+    @abstractmethod
+    def model_info(self) -> ModelInfo: ...
 
     @abstractmethod
     def warmup(self) -> None:

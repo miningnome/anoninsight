@@ -1,33 +1,34 @@
 from __future__ import annotations
 
+import pytest
 from fastapi.testclient import TestClient
 
 from vip.api.app import create_app
-from vip.core.config import Settings
+from vip.core.config import Settings, StorageConfig
 
 
-def _client() -> TestClient:
+@pytest.fixture
+def client(tmp_path):
     # No cameras configured: exercises the API/web wiring without needing
-    # any real camera hardware or video file.
-    app = create_app(Settings())
-    return TestClient(app)
+    # any real camera hardware or video file. The database goes to tmp_path
+    # so tests never write into the working tree.
+    settings = Settings(storage=StorageConfig(database_path=str(tmp_path / "vip.db")))
+    with TestClient(create_app(settings)) as test_client:
+        yield test_client
 
 
-def test_index_page_is_served():
-    with _client() as client:
-        response = client.get("/")
+def test_index_page_is_served(client):
+    response = client.get("/")
     assert response.status_code == 200
     assert "Video Intelligence Platform" in response.text
 
 
-def test_list_cameras_empty_by_default():
-    with _client() as client:
-        response = client.get("/api/cameras")
+def test_list_cameras_empty_by_default(client):
+    response = client.get("/api/cameras")
     assert response.status_code == 200
     assert response.json() == []
 
 
-def test_unknown_camera_returns_404():
-    with _client() as client:
-        response = client.get("/api/cameras/does-not-exist")
+def test_unknown_camera_returns_404(client):
+    response = client.get("/api/cameras/does-not-exist")
     assert response.status_code == 404

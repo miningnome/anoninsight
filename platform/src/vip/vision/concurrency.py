@@ -15,7 +15,7 @@ import threading
 
 from vip.cameras.base import Frame
 
-from .base import Detection, VisionEngine
+from .base import Detection, ModelInfo, VisionEngine
 
 
 class SerializedVisionEngine(VisionEngine):
@@ -23,6 +23,10 @@ class SerializedVisionEngine(VisionEngine):
         self.name = inner.name
         self._inner = inner
         self._lock = threading.Lock()
+
+    @property
+    def model_info(self) -> ModelInfo:
+        return self._inner.model_info
 
     def warmup(self) -> None:
         with self._lock:

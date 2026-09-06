@@ -9,7 +9,7 @@ Detection objects, e.g. to exercise the HUD overlay end-to-end in tests.
 from __future__ import annotations
 
 from vip.cameras.base import Frame
-from vip.vision.base import Detection
+from vip.vision.base import Detection, ModelInfo
 
 from .base import FaceEngine
 
@@ -17,6 +17,10 @@ from .base import FaceEngine
 class MockFaceEngine(FaceEngine):
     def __init__(self) -> None:
         self._stub_faces: list[Detection] = []
+
+    @property
+    def model_info(self) -> ModelInfo:
+        return ModelInfo(model_id="mock", model_version="1")
 
     def warmup(self) -> None:
         pass
