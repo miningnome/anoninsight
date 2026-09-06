@@ -1,0 +1,28 @@
+# Copia este fichero a settings.toml (o exporta VIP_* como variables de
+# entorno) para configurar la Video Intelligence Platform en desarrollo.
+#
+# Fase 1: solo hace falta la seccion [[cameras]]. El resto de secciones
+# se activaran en fases posteriores (deteccion facial, GPU, etc.).
+
+[server]
+host = "0.0.0.0"
+port = 8088
+
+[[cameras]]
+id = "camera-01"
+name = "Reception"
+source_type = "rtsp"          # "rtsp" | "usb" | "file"
+url = "rtsp://192.168.1.50:554/stream1"
+open_timeout_seconds = 5.0
+read_timeout_seconds = 5.0
+reconnect_delay_seconds = 1.0
+display_fps = 15.0
+
+# Ejemplo de camara de pruebas sin hardware real (Fase 1):
+# [[cameras]]
+# id = "camera-test"
+# name = "Local test file"
+# source_type = "file"
+# url = "platform/tests/fixtures/sample.mp4"
+# loop = true
+# display_fps = 15.0

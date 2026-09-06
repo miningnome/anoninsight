@@ -2,10 +2,12 @@
 
 > "Any camera. Local AI. Modular vision. Extensible intelligence."
 
-Estado: **propuesta pendiente de validacion**. Este documento responde a los 12
-puntos solicitados como primera tarea del proyecto. No se ha implementado
-ningun codigo de aplicacion todavia; solo se documenta el analisis y la
-arquitectura propuesta, tal y como se pidio explicitamente.
+Estado: **validado**. El usuario confirmo construir la Video Intelligence
+Platform como aplicacion nueva e independiente (paquete Python `vip`, en el
+directorio `platform/` de este mismo monorepo), usando `insightface` + FAISS
+directamente para el MVP y dejando `server/` intacto como posible
+integracion futura opcional. La implementacion arranca por la Fase 1
+(ingestion RTSP + video en vivo) descrita en la seccion 11.
 
 ---
 
@@ -691,16 +693,10 @@ detalle tecnico de que implica cada una y, donde aplica, la relacion con
 
 ---
 
-## 12. Decision que requiere validacion antes de escribir codigo
+## 12. Decision validada
 
-Antes de empezar la Fase 1 hace falta que el usuario confirme (o corrija)
-la decision de la seccion 2.1: construir `platform/` como aplicacion nueva
-que usa `insightface` + FAISS directamente para el MVP, dejando `server/`
-como una posible integracion futura opcional, en lugar de acoplarse desde
-ya a los internos de `server/` o de tratarlo como un microservicio del que
-depende el MVP desde el primer commit.
-
-Tambien queda pendiente de confirmar el nombre del paquete Python
-(`vip` se usa aqui como marcador de posicion) y si el repositorio de
-codigo debe vivir en este mismo monorepo bajo `platform/` o en un
-repositorio separado.
+Confirmado: `platform/` se construye como aplicacion nueva e independiente
+en este mismo monorepo, con paquete Python `vip`, usando `insightface` +
+FAISS directamente para el MVP. `server/` queda intacto; se reevaluara como
+posible backend `FaceEngine` alternativo a partir de la Fase 9 si hace
+falta escalar a volumenes que lo justifiquen.

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Video Intelligence Platform</title>
+<style>
+  body { font-family: system-ui, sans-serif; background:#111; color:#eee; margin:0; padding:1.5rem; }
+  h1 { font-size:1.1rem; font-weight:600; letter-spacing:.02em; margin:0 0 1rem; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(360px,1fr)); gap:1rem; }
+  .camera { background:#1b1b1b; border:1px solid #2a2a2a; border-radius:8px; overflow:hidden; }
+  .camera img { width:100%; display:block; background:#000; aspect-ratio:16/9; object-fit:contain; }
+  .camera .meta { padding:.6rem .8rem; display:flex; justify-content:space-between; align-items:center; font-size:.85rem; }
+  .status { padding:.1rem .5rem; border-radius:999px; font-size:.75rem; }
+  .status.running { background:#12351f; color:#5fd88f; }
+  .status.reconnecting { background:#3a2c12; color:#e8b054; }
+  .status.starting, .status.stopped { background:#2a2a2a; color:#999; }
+  #empty { color:#888; }
+</style>
+</head>
+<body>
+<h1>Video Intelligence Platform - camaras en vivo</h1>
+<div id="grid" class="grid"></div>
+<p id="empty" hidden>No hay camaras configuradas. Edita config/settings.toml.</p>
+<script>
+let knownIds = new Set();
+
+function cameraCard(camera) {
+  const el = document.createElement("div");
+  el.className = "camera";
+  el.id = `camera-${camera.id}`;
+  el.innerHTML = `
+    <img src="/api/cameras/${camera.id}/stream.mjpg" alt="${camera.name}">
+    <div class="meta">
+      <span>${camera.name}</span>
+      <span class="status ${camera.status}" data-role="status">${camera.status}</span>
+    </div>`;
+  return el;
+}
+
+async function refresh() {
+  const res = await fetch("/api/cameras");
+  const cameras = await res.json();
+  const grid = document.getElementById("grid");
+  const empty = document.getElementById("empty");
+
+  if (cameras.length === 0) {
+    grid.innerHTML = "";
+    empty.hidden = false;
+    knownIds = new Set();
+    return;
+  }
+  empty.hidden = true;
+
+  const currentIds = new Set(cameras.map((c) => c.id));
+  const sameIds =
+    currentIds.size === knownIds.size && [...currentIds].every((id) => knownIds.has(id));
+
+  if (!sameIds) {
+    grid.innerHTML = "";
+    for (const camera of cameras) {
+      grid.appendChild(cameraCard(camera));
+    }
+    knownIds = currentIds;
+    return;
+  }
+
+  // Same set of cameras: only refresh the status badge so the <img> tag is
+  // never recreated and the MJPEG connection is not restarted every poll.
+  for (const camera of cameras) {
+    const badge = document.querySelector(`#camera-${camera.id} [data-role="status"]`);
+    if (badge) {
+      badge.textContent = camera.status;
+      badge.className = `status ${camera.status}`;
+    }
+  }
+}
+
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>
